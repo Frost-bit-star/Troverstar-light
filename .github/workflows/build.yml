@@ -20,30 +20,23 @@ jobs:
     - name: 🔧 Install Cordova CLI
       run: npm install -g cordova
 
-    - name: 📦 Install Android SDK (no emulator)
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 30
-        target: default
-        arch: x86_64
-        force-avd-creation: false
-        disable-animations: true
-        script: echo "Using SDK only, skipping emulator"
-
     - name: ⚙️ Install dependencies & Cordova plugins
       run: |
+        npm install
         cordova platform add android
         cordova plugin add cordova-plugin-whitelist
         cordova plugin add cordova-plugin-splashscreen
         cordova plugin add cordova-plugin-network-information
 
-    - name: 🛠️ Build APK
-      run: cordova build android
+    - name: 📦 Build APK
+      run: |
+        cd platforms/android
+        ./gradlew assembleDebug
 
-    - name: 📦 Create Release for each commit
+    - name: 📤 Upload Release to GitHub
       uses: softprops/action-gh-release@v1
       with:
-        name: Trover App Commit ${{ github.sha }}
+        name: Troverstar Build ${{ github.sha }}
         tag_name: release-${{ github.sha }}
         files: platforms/android/app/build/outputs/apk/debug/app-debug.apk
       env:

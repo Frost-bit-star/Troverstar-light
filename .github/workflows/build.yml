@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 Checkout repository
+    - name: 📥 Checkout Repository
       uses: actions/checkout@v4
 
-    - name: 🧰 Set up Node.js
+    - name: 🧰 Set Up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 18
@@ -20,26 +20,27 @@ jobs:
     - name: 🔧 Install Cordova CLI
       run: npm install -g cordova
 
-    - name: ⚙️ Install dependencies & Cordova plugins
+    - name: 📦 Install Project Dependencies
+      run: npm install
+
+    - name: ⚙️ Add Android Platform & Required Plugins
       run: |
-        npm install
         cordova platform add android
         cordova plugin add cordova-plugin-whitelist
         cordova plugin add cordova-plugin-splashscreen
         cordova plugin add cordova-plugin-network-information
-        cordova prepare android
 
-    - name: 📦 Build APK
-      run: |
-        cd platforms/android
-        chmod +x ./gradlew
-        ./gradlew assembleDebug
+    - name: 🏗️ Build Android APK
+      run: cordova build android --release
 
-    - name: 📤 Upload Release to GitHub
+    - name: 📁 List APK File (Debugging)
+      run: ls -l platforms/android/app/build/outputs/apk/release/
+
+    - name: 📤 Upload APK to GitHub Releases
       uses: softprops/action-gh-release@v1
       with:
         name: Troverstar Build ${{ github.sha }}
         tag_name: release-${{ github.sha }}
-        files: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        files: platforms/android/app/build/outputs/apk/release/app-release.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

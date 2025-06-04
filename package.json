@@ -1,0 +1,15 @@
+{
+  "name": "trover-webview",
+  "version": "1.0.0",
+  "description": "Trover full-screen WebView",
+  "cordova": {
+    "plugins": {
+      "cordova-plugin-whitelist": {},
+      "cordova-plugin-splashscreen": {},
+      "cordova-plugin-network-information": {}
+    },
+    "platforms": ["android"]
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

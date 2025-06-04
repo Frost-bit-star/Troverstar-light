@@ -9,11 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🧹 Clear Cordova/Gradle Cache
-      run: |
-        rm -rf platforms/ plugins/ node_modules/ package-lock.json
-        echo "Cleared local build caches ✅"
-
     - name: 📥 Checkout Repository
       uses: actions/checkout@v4
 
@@ -34,28 +29,25 @@ jobs:
     - name: 📦 Install Project Dependencies
       run: npm install
 
-    - name: ⚙️ Add Android Platform & Required Plugins
+    - name: ⚙️ Add Android Platform & Plugins
       run: |
         cordova platform add android
         cordova plugin add cordova-plugin-whitelist
         cordova plugin add cordova-plugin-splashscreen
         cordova plugin add cordova-plugin-network-information
 
-    - name: 📝 Force Enable AndroidX & Jetifier
+    - name: 📝 Enable AndroidX & Jetifier
       run: |
         echo "android.useAndroidX=true" >> platforms/android/gradle.properties
         echo "android.enableJetifier=true" >> platforms/android/gradle.properties
 
     - name: 🏗️ Build Android APK (Debug)
-      run: |
-        cd platforms/android
-        ./gradlew cdvBuildDebug --stacktrace --info
+      run: cordova build android --debug
 
     - name: 📁 List APK File
       run: ls -lh platforms/android/app/build/outputs/apk/debug/
 
     - name: 📤 Upload APK to GitHub Releases
-      id: upload
       uses: softprops/action-gh-release@v1
       with:
         name: Troverstar Build ${{ github.sha }}
@@ -75,8 +67,7 @@ jobs:
       uses: peter-evans/create-or-update-comment@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        comment-id: ${{ steps.find_comment.outputs.comment-id }}
-        issue-number: ${{ github.event.head_commit.message }}
+        issue-number: 1 # 👈 Change to your PR/issue number if needed
         body: |
           ✅ **Android APK Build Successful**
           🔗 [Download APK](${{ env.APK_URL }})

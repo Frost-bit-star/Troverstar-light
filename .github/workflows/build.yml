@@ -9,8 +9,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: 🧹 Clear Cordova/Gradle Cache
+      run: |
+        rm -rf platforms/ plugins/ node_modules/ package-lock.json
+        echo "Cleared local build caches ✅"
+
     - name: 📥 Checkout Repository
       uses: actions/checkout@v4
+
+    - name: ☕ Set up Java 11
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '11'
 
     - name: 🧰 Set Up Node.js
       uses: actions/setup-node@v4
@@ -30,13 +41,21 @@ jobs:
         cordova plugin add cordova-plugin-splashscreen
         cordova plugin add cordova-plugin-network-information
 
-    - name: 🏗️ Build Android APK (Debug)
-      run: cordova build android
+    - name: 📝 Force Enable AndroidX & Jetifier
+      run: |
+        echo "android.useAndroidX=true" >> platforms/android/gradle.properties
+        echo "android.enableJetifier=true" >> platforms/android/gradle.properties
 
-    - name: 📁 List APK File (Debugging)
-      run: ls -l platforms/android/app/build/outputs/apk/debug/
+    - name: 🏗️ Build Android APK (Debug)
+      run: |
+        cd platforms/android
+        ./gradlew cdvBuildDebug --stacktrace --info
+
+    - name: 📁 List APK File
+      run: ls -lh platforms/android/app/build/outputs/apk/debug/
 
     - name: 📤 Upload APK to GitHub Releases
+      id: upload
       uses: softprops/action-gh-release@v1
       with:
         name: Troverstar Build ${{ github.sha }}
@@ -44,3 +63,29 @@ jobs:
         files: platforms/android/app/build/outputs/apk/debug/app-debug.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🌐 Generate QR Code
+      id: qr
+      run: |
+        APK_URL="https://github.com/${{ github.repository }}/releases/download/release-${{ github.sha }}/app-debug.apk"
+        echo "APK_URL=$APK_URL" >> $GITHUB_ENV
+        echo '![QR Code](https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='"$APK_URL"')' >> qr.md
+
+    - name: 💬 Comment Commit with Download Link & QR
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        comment-id: ${{ steps.find_comment.outputs.comment-id }}
+        issue-number: ${{ github.event.head_commit.message }}
+        body: |
+          ✅ **Android APK Build Successful**
+          🔗 [Download APK](${{ env.APK_URL }})
+          
+          📱 **Scan to Install**
+          ![QR Code](https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${{ env.APK_URL }})
+
+    - name: 🐛 Print Gradle Logs on Failure
+      if: failure()
+      run: |
+        echo "=== Gradle Build Failed ==="
+        find platforms/android -name "*.log" -exec cat {} \; || echo "No log files found"

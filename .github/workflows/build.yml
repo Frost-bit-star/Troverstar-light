@@ -27,10 +27,12 @@ jobs:
         cordova plugin add cordova-plugin-whitelist
         cordova plugin add cordova-plugin-splashscreen
         cordova plugin add cordova-plugin-network-information
+        cordova prepare android
 
     - name: 📦 Build APK
       run: |
         cd platforms/android
+        chmod +x ./gradlew
         ./gradlew assembleDebug
 
     - name: 📤 Upload Release to GitHub
